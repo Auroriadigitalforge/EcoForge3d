@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Environment variables — NEVER commit these
+.env
+backend/.env
+
+# Build output
+frontend/dist/
+frontend/.vite/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OS
+.DS_Store
+Thumbs.db
