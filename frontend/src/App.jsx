@@ -961,6 +961,7 @@ function CarbonQuiz({ onComplete }) {
           <button
             key={i}
             onClick={() => handleSelect(opt.points, opt.raw)}
+            aria-label={`Select option: ${opt.label}`}
             className="w-full py-4 px-6 text-left bg-slate-800/60 hover:bg-emerald-900/40 hover:border-emerald-500/50 border border-slate-700/60 rounded-2xl text-slate-200 transition-all duration-200 font-medium text-sm flex justify-between items-center group"
           >
             <span>{opt.label}</span>
@@ -1018,6 +1019,7 @@ function ActionLogger({ score, setScore, onAction }) {
             <button
               key={item.id}
               onClick={() => handleToggle(item.id, item.points, item.label)}
+              aria-label={`${active ? 'Deselect and remove' : 'Log and add'} eco action habit: ${item.label}`}
               className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all ${
                 active 
                   ? 'bg-emerald-950/40 border-emerald-500 text-emerald-300' 
@@ -1148,6 +1150,7 @@ export default function App() {
           {view === 'dashboard' && (
             <button
               onClick={() => setView('landing')}
+              aria-label="Reset simulation and return to footprint evaluation setup"
               className="text-xs font-bold text-slate-400 hover:text-slate-200 border border-slate-800 bg-slate-900/60 px-4 py-2 rounded-xl transition"
             >
               Reset Simulation
@@ -1198,6 +1201,7 @@ export default function App() {
 
             <button
               onClick={() => setView('quiz')}
+              aria-label="Begin carbon footprint assessment initialization quiz"
               className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-8 py-4 rounded-2xl shadow-lg hover:shadow-emerald-500/20 shadow-emerald-500/10 transition duration-200 transform hover:-translate-y-0.5 text-sm"
             >
               Begin Footprint Assessment

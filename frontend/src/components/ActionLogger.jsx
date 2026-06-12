@@ -42,27 +42,6 @@ function writeTodayLog(log) {
 // Component
 // ---------------------------------------------------------------------------
 
-/**
- * ActionLogger — lets the user log one eco action per day per action type.
- *
- * Props:
- *   score          {number}    Current Carbon_Score (0–100)
- *   setScore       {Function}  Setter from useScore — clamps, persists, triggers re-render
- *   onActionSubmit {Function}  Called with the submitted action name after a successful log
- *                              (used by IslandPage to trigger AIAdvisor)
- *
- * Requirements satisfied:
- *   Req 5.1 — all 7 eco actions with correct point values
- *   Req 5.2 — submit disabled until one action is selected; validation message shown
- *   Req 5.3 — carbon_calculator.applyAction adds points
- *   Req 5.4 — clamped to 100 (via applyAction)
- *   Req 5.5 — setScore persists to localStorage
- *   Req 5.6/5.7 — island transition is handled by EcoIsland3D watching score prop
- *   Req 5.8 — confirmation message contains action name + points awarded
- *   Req 5.9 — duplicate same-day action: message shown, no points added
- *   Req 8.4 — radio inputs with labels for keyboard navigation
- *   Req 8.5 — toast visible for ≥ 3 seconds
- */
 export default function ActionLogger({ score, setScore, onActionSubmit }) {
   const [selected,    setSelected]    = useState(null);   // action name or null
   const [toast,       setToast]       = useState(null);   // { message, type: 'success'|'duplicate'|'validation' }
@@ -95,7 +74,6 @@ export default function ActionLogger({ score, setScore, onActionSubmit }) {
   function handleSubmit(e) {
     e.preventDefault();
 
-    // Req 5.2: validate selection
     if (!selected) {
       setAttempted(true);
       showToast('Please select an action before submitting.', 'validation');
@@ -105,31 +83,24 @@ export default function ActionLogger({ score, setScore, onActionSubmit }) {
     setAttempted(false);
     const log = readTodayLog();
 
-    // Req 5.9: duplicate check
     if (log.includes(selected)) {
       showToast(`You've already logged "${selected}" today.`, 'duplicate');
       return;
     }
 
-    // Req 5.3 / 5.4: apply delta and clamp
     const action     = ACTIONS.find(a => a.name === selected);
     const newScore   = applyAction(score, action.points);
 
-    // Req 5.5: persist via useScore setter
     setScore(newScore);
 
-    // Persist today's log
     log.push(selected);
     writeTodayLog(log);
     setTodayLogged([...log]);
 
-    // Req 5.8: confirmation message with name + points
     showToast(`✓ ${selected} logged! +${action.points} pts`, 'success');
 
-    // Notify parent (IslandPage) so AIAdvisor can offer feedback
     if (onActionSubmit) onActionSubmit(selected);
 
-    // Reset selection
     setSelected(null);
   }
 
@@ -145,12 +116,12 @@ export default function ActionLogger({ score, setScore, onActionSubmit }) {
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <span className="text-xl" aria-hidden="true">📅</span>
-        <h2 className="text-base font-semibold text-eco-400 uppercase tracking-wider">
+        <h2 id="logger-heading" className="text-base font-semibold text-eco-400 uppercase tracking-wider">
           Daily Actions
         </h2>
       </div>
 
-      {/* Toast notification — Req 5.8, 5.9, 8.5 */}
+      {/* Toast notification */}
       {toast && (
         <div
           role="status"
@@ -173,11 +144,15 @@ export default function ActionLogger({ score, setScore, onActionSubmit }) {
 
       {/* Action selection form */}
       <form onSubmit={handleSubmit} noValidate>
-        {/* Req 8.4: fieldset + radio inputs for keyboard navigation */}
         <fieldset>
           <legend className="sr-only">Select an eco action to log</legend>
 
-          <div className="flex flex-col gap-2 mb-4" role="radiogroup">
+          {/* FIX: Linked the radiogroup to the section title via aria-labelledby */}
+          <div 
+            className="flex flex-col gap-2 mb-4" 
+            role="radiogroup"
+            aria-labelledby="logger-heading"
+          >
             {ACTIONS.map(({ name, emoji, points }) => {
               const alreadyLogged = todayLogged.includes(name);
               const isSelected    = selected === name;
@@ -198,7 +173,7 @@ export default function ActionLogger({ score, setScore, onActionSubmit }) {
                     focus-within:ring-2 focus-within:ring-eco-400 focus-within:ring-offset-2 focus-within:ring-offset-eco-900
                   `}
                 >
-                  {/* Hidden radio — keyboard accessible via Tab + Space/Enter (Req 8.4) */}
+                  {/* FIX: Provided explicit explanatory aria-labels directly onto the input elements */}
                   <input
                     type="radio"
                     name="eco-action"
@@ -210,12 +185,13 @@ export default function ActionLogger({ score, setScore, onActionSubmit }) {
                       setAttempted(false);
                     }}
                     className="sr-only"
+                    aria-label={`${name}, worth ${points} points. ${alreadyLogged ? 'Already logged today.' : ''}`}
                     aria-describedby={alreadyLogged ? `logged-${name}` : undefined}
                   />
 
                   {/* Left: emoji + name */}
-                  <span className="flex items-center gap-2 min-w-0">
-                    <span className="text-lg shrink-0" aria-hidden="true">{emoji}</span>
+                  <span className="flex items-center gap-2 min-w-0" aria-hidden="true">
+                    <span className="text-lg shrink-0">{emoji}</span>
                     <span className={`text-sm font-medium truncate ${alreadyLogged ? 'text-eco-600' : 'text-white'}`}>
                       {name}
                     </span>
@@ -237,7 +213,7 @@ export default function ActionLogger({ score, setScore, onActionSubmit }) {
                         : 'bg-eco-800 text-eco-400'
                       }
                     `}
-                    aria-label={`+${points} points`}
+                    aria-hidden="true"
                   >
                     +{points}
                   </span>
@@ -246,7 +222,7 @@ export default function ActionLogger({ score, setScore, onActionSubmit }) {
             })}
           </div>
 
-          {/* Validation message — Req 5.2 */}
+          {/* Validation message */}
           {attempted && !selected && (
             <p
               role="alert"
@@ -257,11 +233,12 @@ export default function ActionLogger({ score, setScore, onActionSubmit }) {
             </p>
           )}
 
-          {/* Submit button — disabled until selection made (Req 5.2) */}
+          {/* Submit button */}
           <button
             type="submit"
             disabled={!selected}
             aria-disabled={!selected}
+            aria-label={selected ? `Log action: ${selected} to earn ${ACTIONS.find(a => a.name === selected)?.points ?? 0} points` : "Log selected eco action"}
             className={`
               w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200
               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-eco-400

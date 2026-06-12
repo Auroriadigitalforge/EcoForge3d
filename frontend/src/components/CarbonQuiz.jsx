@@ -5,7 +5,7 @@ import { saveScore, saveTransportChoice } from '../utils/scoreManager.js';
 
 /**
  * Quiz questions in the required order (Req 2.1):
- *   1. Transportation, 2. AC usage, 3. Diet, 4. Electricity, 5. Reusable products
+ * 1. Transportation, 2. AC usage, 3. Diet, 4. Electricity, 5. Reusable products
  */
 const QUESTIONS = [
   {
@@ -68,17 +68,17 @@ const QUESTIONS = [
  * CarbonQuiz — 5-question quiz that computes the initial Carbon_Score.
  *
  * Requirements satisfied:
- *   Req 2.1  — 5 questions in the required topic order
- *   Req 2.2  — advances on selection, no back navigation
- *   Req 2.3  — correct point deltas per answer
- *   Req 2.4  — score = 50 + sum(deltas)
- *   Req 2.5  — clamped to 0 minimum (via computeInitialScore)
- *   Req 2.6  — clamped to 100 maximum (via computeInitialScore)
- *   Req 2.7  — persists via saveScore
- *   Req 2.8  — shows error banner on save failure, stays on final screen
- *   Req 2.9  — navigates to /island on success
- *   Req 2.10 — handled in App.jsx (redirect if score exists)
- *   Req 8.4  — fieldset/radio for keyboard navigation
+ * Req 2.1  — 5 questions in the required topic order
+ * Req 2.2  — advances on selection, no back navigation
+ * Req 2.3  — correct point deltas per answer
+ * Req 2.4  — score = 50 + sum(deltas)
+ * Req 2.5  — clamped to 0 minimum (via computeInitialScore)
+ * Req 2.6  — clamped to 100 maximum (via computeInitialScore)
+ * Req 2.7  — persists via saveScore
+ * Req 2.8  — shows error banner on save failure, stays on final screen
+ * Req 2.9  — navigates to /island on success
+ * Req 2.10 — handled in App.jsx (redirect if score exists)
+ * Req 8.4  — fieldset/radio for keyboard navigation
  */
 export default function CarbonQuiz() {
   const navigate  = useNavigate();
@@ -101,13 +101,11 @@ export default function CarbonQuiz() {
       setDeltas(nextDeltas);
       setStep(s => s + 1);
     } else {
-      // All questions answered — compute and save
       const score = computeInitialScore(nextDeltas);
       try {
         saveScore(score);
         navigate('/island');
       } catch {
-        // Req 2.8: display error, stay on final question
         setSaveError('Could not save your score. Please try again or free up browser storage.');
       }
     }
@@ -130,7 +128,7 @@ export default function CarbonQuiz() {
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-xl sm:text-2xl font-bold text-eco-300">Carbon Footprint Quiz</h1>
           <span className="text-sm text-eco-500" aria-live="polite">
-            {step + 1} / {totalSteps}
+            Question {step + 1} of {totalSteps}
           </span>
         </div>
 
@@ -141,7 +139,7 @@ export default function CarbonQuiz() {
           aria-valuenow={step + 1}
           aria-valuemin={1}
           aria-valuemax={totalSteps}
-          aria-label={`Question ${step + 1} of ${totalSteps}`}
+          aria-label={`Progress: Question ${step + 1} of ${totalSteps}`}
         >
           <div
             className="h-full bg-eco-400 rounded-full transition-all duration-500"
@@ -164,39 +162,47 @@ export default function CarbonQuiz() {
           </div>
         )}
 
-        <fieldset>
-          <legend className="w-full mb-6">
-            <div className="flex items-center gap-3 mb-1">
-              <span className="text-4xl" aria-hidden="true">{question.emoji}</span>
-              <h2 className="text-lg sm:text-xl font-semibold text-white leading-snug">
-                {question.text}
-              </h2>
-            </div>
-          </legend>
+        <form onSubmit={(e) => e.preventDefault()}>
+          <fieldset>
+            {/* FIX: Simplified the legend by removing nested block h2 headers to align with HTML standards */}
+            <legend className="w-full mb-6 block text-lg sm:text-xl font-semibold text-white leading-snug">
+              <span className="flex items-center gap-3">
+                <span className="text-4xl" aria-hidden="true">{question.emoji}</span>
+                <span>{question.text}</span>
+              </span>
+            </legend>
 
-          {/* Answer options — radio buttons for keyboard accessibility (Req 8.4) */}
-          <div className="flex flex-col gap-3" role="group">
-            {question.answers.map(({ label, delta, hint }) => (
-              <button
-                key={label}
-                type="button"
-                onClick={() => handleAnswer(delta, label)}
-                className="
-                  w-full text-left flex items-center justify-between
-                  px-5 py-4 rounded-2xl border border-eco-700/70
-                  bg-eco-900/50 hover:bg-eco-800/65 hover:border-eco-500
-                  text-white transition-all duration-150
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-eco-400 focus-visible:ring-offset-2 focus-visible:ring-offset-eco-900
-                  hover:translate-x-0.5 active:scale-[0.98]
-                "
-                aria-label={`${label} — ${hint}. Delta: ${delta > 0 ? '+' : ''}${delta} points`}
-              >
-                <span className="font-medium text-base">{label}</span>
-                <span className="text-xs text-eco-300/90 ml-3 shrink-0">{hint}</span>
-              </button>
-            ))}
-          </div>
-        </fieldset>
+            {/* FIX: Transformed pseudo-buttons into semantic, keyboard navigable radio options */}
+            <div className="flex flex-col gap-3" role="radiogroup" aria-label={question.text}>
+              {question.answers.map(({ label, delta, hint }) => (
+                <label
+                  key={label}
+                  className="
+                    w-full text-left flex items-center justify-between
+                    px-5 py-4 rounded-2xl border border-eco-700/70
+                    bg-eco-900/50 hover:bg-eco-800/65 hover:border-eco-500
+                    text-white transition-all duration-150 cursor-pointer
+                    hover:translate-x-0.5 active:scale-[0.98] select-none
+                    focus-within:ring-2 focus-within:ring-eco-400 focus-within:ring-offset-2 focus-within:ring-offset-eco-900
+                  "
+                >
+                  <input
+                    type="radio"
+                    name={`quiz-option-${question.id}`}
+                    value={label}
+                    onChange={() => handleAnswer(delta, label)}
+                    className="sr-only"
+                    aria-label={`${label}. ${hint}`}
+                  />
+                  <span className="font-medium text-base">{label}</span>
+                  <span className="text-xs text-eco-300/90 ml-3 shrink-0" aria-hidden="true">
+                    {hint}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </form>
       </div>
 
       {/* No back navigation — Req 2.2 */}

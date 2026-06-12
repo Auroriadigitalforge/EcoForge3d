@@ -1,17 +1,15 @@
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 /**
  * LandingPage — introduces EcoForge 3D and offers a "Start Quiz" CTA.
  *
  * Requirements satisfied:
- *   Req 1.1 — displays "EcoForge 3D" and tagline "Forge a Greener Future"
- *   Req 1.2 — description ≤ 100 words
- *   Req 1.3 — "Start Quiz" button present
- *   Req 1.4 — navigates to /quiz via React Router (no full reload)
+ * Req 1.1 — displays "EcoForge 3D" and tagline "Forge a Greener Future"
+ * Req 1.2 — description ≤ 100 words
+ * Req 1.3 — "Start Quiz" button present
+ * Req 1.4 — navigates to /quiz via React Router (no full reload)
  */
 export default function LandingPage() {
-  const navigate = useNavigate();
-
   return (
     <main className="relative min-h-screen px-6 py-12 sm:px-10 lg:px-16 hero-spotlight overflow-hidden">
       <div
@@ -48,28 +46,31 @@ export default function LandingPage() {
             AI-generated advice from Gemini keeps you motivated along the way.
           </p>
 
-          <div className="flex flex-wrap gap-3 mb-9" aria-label="Key features">
+          {/* FIX: Swapped generic div with aria-label to a structured semantic unordered list */}
+          <ul className="flex flex-wrap gap-3 mb-9" text-label="Key features">
             {[
               { icon: '📊', label: 'Carbon Quiz' },
               { icon: '🏝️', label: '3D Island' },
               { icon: '📅', label: 'Daily Actions' },
               { icon: '🤖', label: 'AI Advisor' },
             ].map(({ icon, label }) => (
-              <span
+              <li
                 key={label}
                 className="flex items-center gap-1.5 rounded-full border border-eco-700/80 bg-eco-900/60 text-eco-200 text-sm font-semibold px-4 py-1.5"
               >
+                {/* FIX: Added explicit aria-hidden boundary onto dynamic layout emojis */}
                 <span aria-hidden="true">{icon}</span>
-                {label}
-              </span>
+                <span>{label}</span>
+              </li>
             ))}
-          </div>
+          </ul>
 
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-            <button
-              onClick={() => navigate('/quiz')}
+            {/* FIX: Replaced onClick button navigation with a native semantic React Router Link component */}
+            <Link
+              to="/quiz"
               className="
-                px-10 py-4 rounded-2xl text-lg font-bold
+                inline-block text-center px-10 py-4 rounded-2xl text-lg font-bold
                 bg-eco-400 hover:bg-eco-300 active:bg-eco-500 text-eco-950
                 shadow-[0_12px_40px_rgba(22,163,74,0.35)]
                 transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]
@@ -77,15 +78,19 @@ export default function LandingPage() {
               "
             >
               Start Quiz
-            </button>
+            </Link>
             <p className="text-xs text-eco-600 select-none">
               No account required &middot; No data stored on servers
             </p>
           </div>
         </section>
 
-        <aside className="glass-panel rounded-3xl p-6 sm:p-7 lg:p-8">
-          <h2 className="text-xl font-semibold text-eco-200 mb-5">What Happens Next</h2>
+        {/* FIX: Bound the aside panel landmark explicitly to its inner header definition */}
+        <aside 
+          className="glass-panel rounded-3xl p-6 sm:p-7 lg:p-8"
+          aria-labelledby="aside-heading"
+        >
+          <h2 id="aside-heading" className="text-xl font-semibold text-eco-200 mb-5">What Happens Next</h2>
           <div className="space-y-4">
             {[
               { step: '01', title: 'Take the 5-question quiz', desc: 'We estimate your starting carbon score from your daily habits.' },

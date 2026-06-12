@@ -7,6 +7,7 @@ backend/.env
 
 # Build output
 frontend/dist/
+frontend/docs/
 frontend/.vite/
 
 # Test coverage
