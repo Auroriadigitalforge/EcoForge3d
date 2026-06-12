@@ -1240,12 +1240,17 @@ export default function App() {
       </main>
 
       {/* ── TOAST DISCOVERY BAR ── */}
-      {toast && (
-        <div className="fixed bottom-6 right-6 bg-slate-900 border border-slate-800 shadow-2xl px-5 py-3 rounded-2xl z-50 animate-slide-up flex items-center gap-3">
-          <span className="text-emerald-400">⚡</span>
-          <span className="text-xs font-semibold text-slate-200">{toast}</span>
-        </div>
-      )}
+{toast && (
+  <div 
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
+    className="fixed bottom-6 right-6 bg-slate-900 border border-slate-800 shadow-2xl px-5 py-3 rounded-2xl z-50 animate-slide-up flex items-center gap-3"
+  >
+    <span className="text-emerald-400" aria-hidden="true">⚡</span>
+    <span className="text-xs font-semibold text-slate-200">{toast}</span>
+  </div>
+)}
 
       {/* ── COMPREHENSIVE FOOTER ── */}
       <footer className="border-t border-slate-900 py-4 px-6 text-center">
