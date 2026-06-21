@@ -1,19 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
+import { deriveState, getPollutionLevel, applyActionDelta, computeQuizScore } from './utils/appLogic.js';
 
 // ============================================================================
 // 1. CONFIGURATION & STATE RULES (Carbon Calculator)
 // ============================================================================
+// Carbon_Score thresholds, pollution scaling, action deltas, and quiz scoring
+// live in ./utils/appLogic.js so they can be unit-tested without React/WebGL.
 
 const TRANSITION_MS = 900;
 const DEFAULT_CAMERA_DISTANCE = 18;
-
-// Carbon calculation multipliers & score states
-function deriveState(score) {
-  if (score < 40) return 'Polluted';
-  if (score <= 75) return 'Neutral';
-  return 'Green';
-}
 
 const STATE_TRANSITION_MSG = {
   Polluted: '🏭 Your island has descended into a Polluted state. Log eco-actions to clean up the air!',
@@ -450,10 +446,6 @@ function EcoIsland3D({ score, transportChoice = 'car' }) {
     targetPhi: Math.PI / 3.5,
   });
 
-  const getPollutionLevel = (s) => {
-    return 1 - Math.max(0, Math.min(100, s)) / 100;
-  };
-
   const buildScene = useCallback((state, transport, pollutionLevel) => {
     switch (state) {
       case 'Polluted': return buildPollutedScene(transport, pollutionLevel);
@@ -783,52 +775,48 @@ function EcoIsland3D({ score, transportChoice = 'car' }) {
 }
 
 // ============================================================================
-// 5. GEMINI API CLIENT (Fully Integrated with Rate Limit Handling & Mock Fallbacks)
+// 5. AI ADVISOR CLIENT
 // ============================================================================
+// Calls the secure Express backend proxy (POST /api/advisor), which holds the
+// Gemini API key server-side and never exposes it to the browser (see
+// backend/services/gemini.js). On static hosts with no backend available
+// (e.g. the GitHub Pages demo) this falls back to a deterministic,
+// context-aware message so the flow stays usable without credentials.
 
-const apiKey = ""; // Canvas runtime injection
+const ADVISOR_TIMEOUT_MS = 10_000;
 
 async function fetchGeminiAdvice(score, actionLog) {
-  if (!apiKey) {
-    // Elegant system fallback if API key is not ready
-    return getOfflineFallbackAdvice(score, actionLog);
+  const action = actionLog || 'Started my sustainability journey';
+  const isStaticHost =
+    typeof window !== 'undefined' && window.location.hostname.includes('github.io');
+
+  if (isStaticHost) {
+    return getOfflineFallbackAdvice(score, action);
   }
 
-  const systemPrompt = `You are a helpful, encouraging environmental advisor for "EcoForge 3D". Based on the user's Carbon Score (${score}/100, where higher is cleaner) and their latest environmental action: "${actionLog || 'None'}", provide ONE encouraging statement and ONE short, practical carbon-reduction tip. Keep your entire response under 45 words. Be upbeat and friendly!`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ADVISOR_TIMEOUT_MS);
 
-  const payload = {
-    contents: [{ parts: [{ text: `My score is ${score} and I just did: ${actionLog || 'Started my sustainability journey'}. Provide eco advice.` }] }],
-    systemInstruction: { parts: [{ text: systemPrompt }] }
-  };
+  try {
+    const response = await fetch('/api/advisor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, score }),
+      signal: controller.signal,
+    });
 
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-
-  // Robust backoff implementation
-  let delay = 1000;
-  for (let attempt = 0; attempt < 5; attempt++) {
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      if (response.ok) {
-        const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) return text;
-      }
-      if (response.status === 429) {
-        await new Promise((resolve) => setTimeout(resolve, delay));
-        delay *= 2;
-      } else {
-        break;
-      }
-    } catch (err) {
-      await new Promise((resolve) => setTimeout(resolve, delay));
-      delay *= 2;
+    const data = await response.json();
+    if (!response.ok || !data.advice) {
+      throw new Error(data?.error || `Server responded ${response.status}`);
     }
+    return data.advice;
+  } catch (err) {
+    // Network error, timeout, or backend not running locally — degrade
+    // gracefully instead of breaking the advisor panel.
+    return getOfflineFallbackAdvice(score, action);
+  } finally {
+    clearTimeout(timer);
   }
-  return getOfflineFallbackAdvice(score, actionLog);
 }
 
 function getOfflineFallbackAdvice(score, action) {
@@ -927,12 +915,7 @@ function CarbonQuiz({ onComplete }) {
       setStep(step + 1);
     } else {
       // Calculate total starting score
-      const totalScore = 
-        updatedAnswers.transport +
-        updatedAnswers.ac +
-        updatedAnswers.diet +
-        updatedAnswers.electricity +
-        updatedAnswers.waste;
+      const totalScore = computeQuizScore(updatedAnswers);
       onComplete(totalScore, updatedAnswers.transportChoice || 'car');
     }
   };
@@ -1001,10 +984,10 @@ function ActionLogger({ score, setScore, onAction }) {
   const handleToggle = (id, points, label) => {
     if (activeItems.includes(id)) {
       setActiveItems(activeItems.filter(x => x !== id));
-      setScore(Math.max(10, score - points));
+      setScore(applyActionDelta(score, points, false));
     } else {
       setActiveItems([...activeItems, id]);
-      setScore(Math.min(100, score + points));
+      setScore(applyActionDelta(score, points, true));
       onAction(label);
     }
   };

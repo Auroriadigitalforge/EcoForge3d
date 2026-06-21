@@ -15,12 +15,11 @@ The target persona is a student or everyday user who wants fast, understandable 
 The app combines a deterministic scoring model with an assistant layer:
 
 - A five-question quiz calculates the initial carbon score from user context.
-- The score is clamped between 0 and 100 and saved in browser localStorage.
+- Eco actions logged in-session adjust the score within a 10-100 floor/ceiling.
 - The 3D island changes based on score, making the user's impact visible.
-- Logged eco actions update the experience and unlock assistant feedback.
-- The AI advisor uses the latest action and score to provide short, practical guidance.
-- Locally, the frontend can call the Express backend, which proxies Gemini requests safely without exposing the API key.
-- On GitHub Pages, where no backend server is hosted, the frontend provides a deterministic fallback response so the demo remains usable.
+- The AI advisor calls the Express backend (`POST /api/advisor`), which proxies the request to Gemini server-side so the API key is never exposed to the browser.
+- On GitHub Pages, where no backend server is hosted, the frontend detects this and uses a deterministic fallback response instead, so the demo stays usable without credentials.
+- If the backend request fails for any reason (network error, timeout, missing key), the app degrades gracefully to the same fallback rather than breaking the advisor panel.
 
 ## How the Solution Works
 
@@ -44,10 +43,16 @@ This repository is designed for a single-branch GitHub Pages submission.
 ```text
 EcoForge3d/
 ├── backend/
+│   ├── routes/
+│   ├── services/
+│   └── __tests__/
 ├── docs/
 ├── frontend/
 │   ├── public/
 │   └── src/
+│       ├── App.jsx
+│       ├── utils/appLogic.js
+│       └── __tests__/
 ├── .gitignore
 ├── package.json
 └── README.md
@@ -66,6 +71,10 @@ npm --prefix backend install
 Create the backend environment file:
 
 ```bash
+# macOS / Linux
+cp backend/.env.example backend/.env
+
+# Windows (cmd)
 copy backend\.env.example backend\.env
 ```
 
@@ -108,8 +117,8 @@ npm run deploy         # same as build for single-branch Pages deployment
 
 ## Evaluation Notes
 
-- Code quality: organized React components, utility modules, backend routes, and tests.
-- Security: API key stays server-side; `.env` is ignored; `.env.example` documents required variables.
-- Efficiency: Vite production build, minimal backend proxy, browser localStorage instead of unnecessary database setup.
-- Testing: Vitest, React Testing Library, and property tests cover score and interaction logic.
+- Code quality: a single source of truth for scoring/state logic (`utils/appLogic.js`), organized backend routes, services, and tests.
+- Security: API key stays server-side; `.env` is gitignored; `.env.example` documents required variables as placeholders only.
+- Efficiency: Vite production build, minimal backend proxy, no database — session state lives in memory.
+- Testing: Vitest with property-based tests (fast-check) cover the scoring/state logic on both frontend and backend.
 - Accessibility: semantic controls, focus states, ARIA labels, progress indicators, and keyboard-friendly interactions are included.

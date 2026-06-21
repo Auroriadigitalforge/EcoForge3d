@@ -5,19 +5,10 @@
   "description": "EcoForge 3D — AI-Powered Carbon Footprint Awareness Platform",
   "homepage": "https://Auroriadigitalforge.github.io/EcoForge3d",
   "scripts": {
-    "dev": "npm --prefix frontend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
     "build": "npm --prefix frontend run build",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d frontend/docs"
-  },
-  "devDependencies": {
-    "gh-pages": "^6.3.0",
-    "vite": "^5.0.0",
-    "@vitejs/plugin-react": "^4.2.0"
-  },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "three": "^0.184.0"
+    "test": "npm --prefix frontend run test && npm --prefix backend run test",
+    "deploy": "npm run build"
   }
 }

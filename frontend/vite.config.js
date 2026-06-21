@@ -9,7 +9,8 @@ export default defineConfig({
 
   // 2. Production build output configuration (Single-branch compliance)
   build: {
-    outDir: '../docs', 
+    outDir: '../docs',
+    emptyOutDir: true,
   },
 
   // 3. Development server & backend api proxy configurations
